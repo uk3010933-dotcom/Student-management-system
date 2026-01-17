@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import Session, select
 from app.database import create_db_and_tables, engine
-from app.models import Student
+from app.models import Student,Teachers
 
 app = FastAPI()
 def get_session():
@@ -55,4 +55,42 @@ def update_student(student_id: int, updated_student: Student, session: Session =
     session.refresh(student)
 
     return student
+@app.get("/teachers")
+def get_teachers(session: Session = Depends(get_session)):
+    teachers = session.exec(select(Teachers)).all()
+    return teachers
 
+@app.post("/teachers")
+def add_teacher(teacher: Teachers, session: Session = Depends(get_session)):
+    teacher.id = None
+    session.add(teacher)
+    session.commit()
+    session.refresh(teacher)
+    return teacher
+
+@app.delete("/teachers/{teacher_id}")
+def delete_teacher(teacher_id: int, session: Session = Depends(get_session)):
+    teacher = session.get(Teachers, teacher_id)
+
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+
+    session.delete(teacher)
+    session.commit()
+
+    return {"deleted": True, "teacher_id": teacher_id}
+
+@app.put("/teachers/{teacher_id}")
+def update_teacher(teacher_id: int,updated_teacher: Teachers, session: Session=Depends(get_session)):
+    teacher= session.get(Teacher, teacher_id)
+    
+    if not teacher:
+        raise HTTPException(status_code=404,detail="Teacher not found")
+    teacher.name= updated_teacher.name
+    teacher.email = updated_teacher.email
+    
+    session.add(teacher)
+    session.commit()
+    session.refresh(teacher)
+
+    return teacher
