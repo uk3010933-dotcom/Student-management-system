@@ -158,10 +158,10 @@ def add_classroom(classroom: Classroom, session: Session = Depends(get_session))
     teacher = session.get(Teachers, classroom.teacher_id)
     if not teacher:
         raise HTTPException(status_code=404, detail="Teacher not found")
-
+    
     if classroom.capacity <= 0:
         raise HTTPException(status_code=400, detail="Capacity must be a positive integer")
-
+     
     session.add(classroom)
     session.commit()
     session.refresh(classroom)
@@ -185,6 +185,14 @@ def update_classroom(classroom_id: int, updated_classroom: Classroom, session: S
         raise HTTPException(status_code=404, detail="Classroom not found")
     if updated_classroom.capacity <= 0:
         raise HTTPException(status_code=400, detail="Capacity must be a positive integer")
+    current_students = session.exec(
+        select(Student).where(Student.classroom_id == classroom_id)
+    ).all()
+    if updated_classroom.capacity < len(current_students):
+        raise HTTPException(
+            status_code=400,
+            detail="Capacity cannot be less than current student count"
+        )
 
     if updated_classroom.teacher_id != classroom.teacher_id:
         teacher = session.get(Teachers, updated_classroom.teacher_id)
