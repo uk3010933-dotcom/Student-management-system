@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import Session, select
 from app.database import create_db_and_tables, engine
 from app.models import Student,Teachers, Classroom
+from sqlalchemy.exc import IntegrityError
 
 app = FastAPI()
 def get_session():
@@ -86,6 +87,8 @@ def get_teachers(session: Session = Depends(get_session)):
 
 @app.post("/teachers")
 def add_teacher(teacher: Teachers, session: Session = Depends(get_session)):
+    teacher.id = None
+
     if teacher.email is not None:
         existing = session.exec(
             select(Teachers).where(Teachers.email == teacher.email)
@@ -94,7 +97,12 @@ def add_teacher(teacher: Teachers, session: Session = Depends(get_session)):
             raise HTTPException(status_code=409, detail="Email already in use")
 
     session.add(teacher)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=400, detail="Insert failed (duplicate id or email).")
+
     session.refresh(teacher)
     return teacher
 
