@@ -141,6 +141,68 @@ def test_duplicate_email_on_put():
       assert error.status_code==409
       assert error.json()["detail"]=="Email already in use"
 
+def test_teacher_exists_on_classroom_post():
+      teacher_data={"name":"Ms Jones", "email": "jones@example.com"}
+      t_response=client.post("/teachers", json=teacher_data)
+      assert t_response.status_code==200
+      teacher_id=t_response.json()["id"]
 
+      classroom_data={
+         "name":"6A",
+         "grade":6,
+         "teacher_id":teacher_id,
+         "capacity": 19
+      }
+      c_response=client.post("/classrooms",json={"name": "6A", "grade": 6, "capacity":19, "teacher_id": 999999999})
+      assert c_response.status_code==404
+      assert c_response.json()["detail"]=="Teacher not found"
 
-   
+def test_move_student_into_full_classroom():
+     teacher_data={"name":"Ms Jones", "email": "jones@example.com"}
+     t_response=client.post("/teachers", json=teacher_data)
+     assert t_response.status_code==200
+     teacher_id=t_response.json()["id"]
+
+     classroom_data1={
+         "name":"3F",
+         "grade":3,
+         "teacher_id":teacher_id,
+         "capacity": 1
+     }
+     c_response=client.post("/classrooms", json=classroom_data1)
+     assert c_response.status_code==200
+     classroom_id1=c_response.json()["id"]
+
+     classroom_data2={
+         "name":"3G",
+         "grade":3,
+         "teacher_id":teacher_id,
+         "capacity": 2
+     }
+     c_response=client.post("/classrooms", json=classroom_data2)
+     assert c_response.status_code==200
+     classroom_id2=c_response.json()["id"]
+     
+     student_data1={
+     "name": "Usman Khan",
+     "is_enrolled": True,
+     "classroom_id": classroom_id1,
+     "age": 20
+     }
+     s_response1=client.post("/students",json=student_data1)
+     assert s_response1.status_code==200
+     student_id1=s_response1.json()["id"]
+       
+     student_data2={
+     "name": "Rameen Khan",
+     "is_enrolled": True,
+     "classroom_id": classroom_id2,
+     "age": 16
+     }
+     s_response2=client.post("/students",json=student_data2)
+     assert s_response2.status_code==200
+     student_id2=s_response2.json()["id"]
+
+     c2_response=client.put(f"/students/{student_id2}", json={"name": "Rameen Khan", "is_enrolled": True, "age": 16, "classroom_id": classroom_id1})
+     assert c2_response.status_code==400
+     assert c2_response.json()["detail"]=="Classroom is full"
