@@ -3,8 +3,10 @@ from sqlmodel import Session, select
 from app.database import create_db_and_tables, engine
 from app.models import Student,Teachers, Classroom
 from sqlalchemy.exc import IntegrityError
+from app.auth import router as auth_router
 
 app = FastAPI()
+app.include_router(auth_router)
 def get_session():
     with Session(engine) as session:
         yield session

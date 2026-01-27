@@ -18,3 +18,9 @@ class Classroom(SQLModel, table=True):
     grade: int
     teacher_id: int =Field(foreign_key="teachers.id")
     capacity: int
+
+class User(SQLModel, table=True):
+    id: Optional[int]=Field(default=None, primary_key=True)
+    email: str = Field(index=True, unique=True)
+    hashed_password: str
+    is_admin: bool= Field(nullable=False, default=False) 

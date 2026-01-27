@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, create_engine
-from app.models import Student,Teachers,Classroom
+from app.models import Student,Teachers,Classroom,User
 
-DATABASE_URL = "sqlite:///students.db"
+DATABASE_URL = "sqlite:///./students.db"
 
 engine = create_engine(DATABASE_URL)
 
