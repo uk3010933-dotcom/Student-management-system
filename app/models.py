@@ -11,6 +11,12 @@ class Teachers(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     email: Optional[str] = None
+    user_id: Optional[int] = Field(
+        default=None,
+        foreign_key="user.id",
+        unique=True,
+        index=True
+    )
 
 class Classroom(SQLModel, table=True):
     id: Optional[int]=Field(default=None, primary_key=True)

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+  </head>
+
+  <body>
+    <h1 id="title">Dashboard</h1>
+
+    <p id="status">Checking login...</p>
+
+    <button id="logoutBtn">Logout</button>
+
+   <!-- Teacher view -->
+<div id="teacherView" style="display:none; margin-top:20px;">
+  <h2>My Classrooms</h2>
+
+  <ul id="teacherClassrooms"></ul>
+
+  <div id="teacherStudentsSection" style="display:none; margin-top:20px;">
+    <h3>Students</h3>
+    <ul id="teacherStudents"></ul>
+
+    <h4>Add Student</h4>
+    <form id="teacherAddStudentForm">
+      <label>Name</label><br>
+      <input type="text" id="tStudentName" required><br><br>
+
+      <label>Age</label><br>
+      <input type="number" id="tStudentAge" required><br><br>
+
+      <label>Enrolled</label><br>
+      <select id="tStudentEnrolled">
+        <option value="true">true</option>
+        <option value="false">false</option>
+      </select><br><br>
+
+      <button type="submit">Add Student</button>
+    </form>
+
+    <p id="teacherMsg"></p>
+  </div>
+</div>
+
+
+    <!-- Admin view -->
+    <div id="adminView" style="display:none; margin-top:20px;">
+      <h2>Admin dashboard</h2>
+
+      <div style="margin: 12px 0;">
+        <button class="tabBtn" data-tab="studentsPanel">Students</button>
+        <button class="tabBtn" data-tab="teachersPanel">Teachers</button>
+        <button class="tabBtn" data-tab="classroomsPanel">Classrooms</button>
+      </div>
+    <!-- EDIT PANEL (shared for all) -->
+<section id="editPanel" style="display:none; margin: 14px 0; padding: 12px; border: 1px solid #ccc;">
+  <h3 id="editTitle">Edit</h3>
+
+  <form id="editForm">
+    <div id="editFields"></div>
+
+    <button type="submit">Save</button>
+    <button type="button" id="editCancelBtn">Cancel</button>
+
+    <p id="editMsg" style="margin-top:10px;"></p>
+  </form>
+</section>
+
+
+
+      <!-- STUDENTS PANEL -->
+      <section id="studentsPanel" class="panel">
+        <h2>Students</h2>
+        <button id="refreshStudentsBtn">Refresh</button>
+        <div style="margin: 10px 0;">
+        <input type="number" id="studentSearchId" placeholder="Student ID">
+        <button id="searchStudentBtn">Search</button>
+        </div>
+        <p id="studentSearchMsg"></p>
+        <select id="studentFilter">
+        <option value="all">All students</option>
+        <option value="enrolled">Enrolled</option>
+        <option value="not_enrolled">Not enrolled</option>
+        </select>
+
+        <ul id="studentsList"></ul>
+
+        <h3>Add student</h3>
+        <form id="addStudentForm">
+          <label>Name</label><br>
+          <input type="text" id="studentName" required><br><br>
+
+          <label>Age</label><br>
+          <input type="number" id="studentAge" required><br><br>
+
+          <label>Enrolled</label><br>
+          <select id="studentEnrolled">
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </select><br><br>
+
+          <label>Classroom ID</label><br>
+          <input type="number" id="studentClassroomId" required><br><br>
+
+          <button type="submit">Add student</button>
+        </form>
+        <p id="studentMsg"></p>
+      </section>
+
+      <!-- TEACHERS PANEL -->
+      <section id="teachersPanel" class="panel" style="display:none;">
+        <h2>Teachers</h2>
+        <button id="refreshTeachersBtn">Refresh</button>
+        <div style="margin: 10px 0;">
+        <input type="number" id="teacherSearchId" placeholder="Teacher ID">
+        <button id="searchTeacherBtn">Search</button>
+        </div>
+        <p id="teacherSearchMsg"></p>
+        <select id="teacherFilter">
+        <option value="all">All teachers</option>
+        <option value="assigned">Assigned to classroom</option>
+        <option value="unassigned">No classroom yet</option>
+        </select>
+
+        <ul id="teachersList"></ul>
+
+        <h3>Add teacher</h3>
+        <form id="addTeacherForm">
+          <label>Name</label><br>
+          <input type="text" id="teacherName" required><br><br>
+
+          <label>Email</label><br>
+          <input type="email" id="teacherEmail" required><br><br>
+
+          <button type="submit">Add teacher</button>
+        </form>
+        <p id="teacherMsg"></p>
+      </section>
+
+      <!-- CLASSROOMS PANEL -->
+      <section id="classroomsPanel" class="panel" style="display:none;">
+        <h2>Classrooms</h2>
+        <button id="refreshClassroomsBtn">Refresh</button>
+        <div style="margin: 10px 0;">
+        <input type="number" id="classroomSearchId" placeholder="Classroom ID">
+        <button id="searchClassroomBtn">Search</button>
+        </div>
+        <p id="classroomSearchMsg"></p>
+        <select id="classroomFilter">
+    <option value="all">All classrooms</option>
+    <option value="full">Full</option>
+    <option value="almost">Almost full</option>
+    <option value="available">Available</option>
+    </select>
+
+        <ul id="classroomsList"></ul>
+
+        <h3>Add classroom</h3>
+        <form id="addClassroomForm">
+          <label>Name</label><br>
+          <input type="text" id="classroomName" required><br><br>
+
+          <label>Grade</label><br>
+          <input type="number" id="classroomGrade" required><br><br>
+
+          <label>Capacity</label><br>
+          <input type="number" id="classroomCapacity" required><br><br>
+
+          <label>Teacher ID</label><br>
+          <input type="number" id="classroomTeacherId" required><br><br>
+
+          <button type="submit">Add classroom</button>
+        </form>
+        <p id="classroomMsg"></p>
+      </section>
+    </div>
+    
+
+    <script src="/static/dashboard.js"></script>
+  </body>
+</html>
