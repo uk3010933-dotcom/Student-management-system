@@ -2,38 +2,64 @@
 <html>
   <head>
     <title>Login</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/static/style.css" />
   </head>
 
-  <body>
-    <h1>Login</h1>
+  <body class="authPage">
+    <div class="authShell">
+      <header class="authHeader">
+        <!-- Logo is optional. Start with text, it's clean. -->
+        <div class="brand">
+          <div class="brandMark">SM</div>
+          <div>
+            <div class="brandName">Student Manager</div>
+            <div class="brandTag">Sign in to continue</div>
+          </div>
+        </div>
+      </header>
 
-    <form id="loginForm">
-      <label>Email</label><br>
-      <input type="email" id="email" required><br><br>
+      <main class="authGrid">
+        <!-- LOGIN CARD -->
+        <section class="card">
+          <h1 class="cardTitle">Login</h1>
 
-      <label>Password</label><br>
-      <input type="password" id="password" required><br><br>
+          <form id="loginForm" class="form">
+            <label class="label" for="email">Email</label>
+            <input class="input" type="email" id="email" autocomplete="email" required />
 
-      <button type="submit">Login</button>
-    </form>
+            <label class="label" for="password">Password</label>
+            <input class="input" type="password" id="password" autocomplete="current-password" required />
 
-    <p id="error"></p>
-    <hr>
+            <button class="btn" type="submit">Login</button>
+          </form>
 
-    <h2>Register</h2>
+          <p id="error" class="msg msgError" aria-live="polite"></p>
+        </section>
 
-    <form id="registerForm">
-      <label>Email</label><br>
-      <input type="email" id="registerEmail" required><br><br>
+        <!-- REGISTER CARD -->
+        <section class="card">
+          <h2 class="cardTitle">Register</h2>
 
-      <label>Password</label><br>
-    <input type="password" id="registerPassword" required><br><br>
+          <form id="registerForm" class="form">
+            <label class="label" for="registerEmail">Email</label>
+            <input class="input" type="email" id="registerEmail" autocomplete="email" required />
 
-    <button type="submit">Register</button>
-    </form>
+            <label class="label" for="registerPassword">Password</label>
+            <input class="input" type="password" id="registerPassword" autocomplete="new-password" required />
 
-    <p id="registerMessage"></p>
+            <button class="btn btnGhost" type="submit">Create account</button>
+          </form>
+
+          <p id="registerMessage" class="msg" aria-live="polite"></p>
+        </section>
+      </main>
+
+      <footer class="authFooter">
+        <small>© Student Manager</small>
+      </footer>
+    </div>
 
     <script src="/static/script.js"></script>
   </body>

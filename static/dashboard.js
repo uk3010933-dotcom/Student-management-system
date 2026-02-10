@@ -14,9 +14,13 @@ const studentMsgEl = document.getElementById("studentMsg");
 
 const teachersListEl = document.getElementById("teachersList");
 const teacherMsgEl = document.getElementById("teacherMsg");
-
+const approveTeacherForm = document.getElementById("approveTeacherForm");
+const approveTeacherMsgEl = document.getElementById("approveTeacherMsg");
 const classroomsListEl = document.getElementById("classroomsList");
 const classroomMsgEl = document.getElementById("classroomMsg");
+const studentsTbody = document.getElementById("studentsTbody");
+const teachersTbody = document.getElementById("teachersTbody");
+const classroomsTbody = document.getElementById("classroomsTbody");
 
 // caches for search + filtering + instant re-render
 let cachedStudents = [];
@@ -129,22 +133,30 @@ if (editCancelBtn) editCancelBtn.addEventListener("click", hideEditPanel);
 /* ---------------- STUDENTS (ADMIN) ---------------- */
 
 function renderStudents(students) {
-  studentsListEl.innerHTML = "";
+  if (!studentsTbody) return;
+  studentsTbody.innerHTML = "";
 
   if (!students || students.length === 0) {
-    studentsListEl.innerHTML = "<li>No students yet.</li>";
+    studentsTbody.innerHTML = `<tr><td colspan="6">No students yet.</td></tr>`;
     return;
   }
 
   for (const s of students) {
-    const li = document.createElement("li");
-    li.innerText = `#${s.id} ${s.name} (age ${s.age}) classroom_id=${s.classroom_id} enrolled=${s.is_enrolled}`;
+    const tr = document.createElement("tr");
 
-    const editBtn = document.createElement("button");
-    editBtn.innerText = "Edit";
-    editBtn.style.marginLeft = "10px";
+    tr.innerHTML = `
+      <td>#${esc(s.id)}</td>
+      <td>${esc(s.name)}</td>
+      <td>${esc(s.age)}</td>
+      <td>${s.is_enrolled ? "✅" : "❌"}</td>
+      <td>${esc(s.classroom_id)}</td>
+      <td>
+        <button class="editBtn">Edit</button>
+        <button class="delBtn">Delete</button>
+      </td>
+    `;
 
-    editBtn.addEventListener("click", () => {
+    tr.querySelector(".editBtn").addEventListener("click", () => {
       showEditPanel(
         `Edit student #${s.id}`,
         `
@@ -165,7 +177,7 @@ function renderStudents(students) {
         `,
         async () => {
           const payload = {
-            name: document.getElementById("editStudentName").value,
+            name: document.getElementById("editStudentName").value.trim(),
             age: Number(document.getElementById("editStudentAge").value),
             is_enrolled: document.getElementById("editStudentEnrolled").value === "true",
             classroom_id: Number(document.getElementById("editStudentClassroomId").value),
@@ -183,30 +195,28 @@ function renderStudents(students) {
       );
     });
 
-    const delBtn = document.createElement("button");
-    delBtn.innerText = "Delete";
-    delBtn.style.marginLeft = "10px";
-
-    delBtn.addEventListener("click", async () => {
+    tr.querySelector(".delBtn").addEventListener("click", async () => {
       studentMsgEl.innerText = "";
+      if (!confirm(`Delete student #${s.id}?`)) return;
+
       try {
         await requestJson(`/students/${s.id}`, {
           method: "DELETE",
           headers: authHeaders(),
         });
 
+        cachedStudents = cachedStudents.filter((x) => x.id !== s.id);
+        applyStudentFilter();
         studentMsgEl.innerText = `Deleted student ${s.id}`;
-        await loadStudents();
       } catch (err) {
         studentMsgEl.innerText = err.message || "Network error deleting student";
       }
     });
 
-    li.appendChild(editBtn);
-    li.appendChild(delBtn);
-    studentsListEl.appendChild(li);
+    studentsTbody.appendChild(tr);
   }
 }
+
 
 function applyStudentFilter() {
   const filterEl = document.getElementById("studentFilter");
@@ -277,10 +287,11 @@ async function searchStudentById() {
 /* ---------------- TEACHERS (ADMIN) ---------------- */
 
 function renderTeachers(teachers) {
-  teachersListEl.innerHTML = "";
+  if (!teachersTbody) return;
+  teachersTbody.innerHTML = "";
 
   if (!teachers || teachers.length === 0) {
-    teachersListEl.innerHTML = "<li>No teachers yet.</li>";
+    teachersTbody.innerHTML = `<tr><td colspan="5">No teachers yet.</td></tr>`;
     return;
   }
 
@@ -288,16 +299,20 @@ function renderTeachers(teachers) {
 
   for (const t of teachers) {
     const assignedCount = classroomsByTeacher.get(t.id) || 0;
-    const badge = assignedCount > 0 ? `assigned(${assignedCount})` : "unassigned";
 
-    const li = document.createElement("li");
-    li.innerText = `#${t.id} ${t.name} (${t.email}) — ${badge}`;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>#${esc(t.id)}</td>
+      <td>${esc(t.name)}</td>
+      <td>${esc(t.email)}</td>
+      <td>${assignedCount > 0 ? `✅ (${assignedCount})` : "❌"}</td>
+      <td>
+        <button class="editBtn">Edit</button>
+        <button class="delBtn">Delete</button>
+      </td>
+    `;
 
-    const editBtn = document.createElement("button");
-    editBtn.innerText = "Edit";
-    editBtn.style.marginLeft = "10px";
-
-    editBtn.addEventListener("click", () => {
+    tr.querySelector(".editBtn").addEventListener("click", () => {
       showEditPanel(
         `Edit teacher #${t.id}`,
         `
@@ -309,8 +324,8 @@ function renderTeachers(teachers) {
         `,
         async () => {
           const payload = {
-            name: document.getElementById("editTeacherName").value,
-            email: document.getElementById("editTeacherEmail").value,
+            name: document.getElementById("editTeacherName").value.trim(),
+            email: document.getElementById("editTeacherEmail").value.trim(),
           };
 
           const updated = await requestJson(`/teachers/${t.id}`, {
@@ -325,43 +340,28 @@ function renderTeachers(teachers) {
       );
     });
 
-    const delBtn = document.createElement("button");
-    delBtn.innerText = "Delete";
-    delBtn.style.marginLeft = "10px";
-
-    delBtn.addEventListener("click", async () => {
+    tr.querySelector(".delBtn").addEventListener("click", async () => {
       teacherMsgEl.innerText = "";
+      if (!confirm(`Delete teacher #${t.id}?`)) return;
+
       try {
         await requestJson(`/teachers/${t.id}`, {
           method: "DELETE",
           headers: authHeaders(),
         });
 
+        cachedTeachers = cachedTeachers.filter((x) => x.id !== t.id);
+        applyTeacherFilter();
         teacherMsgEl.innerText = `Deleted teacher ${t.id}`;
-        await loadTeachers();
       } catch (err) {
         teacherMsgEl.innerText = err.message || "Network error deleting teacher";
       }
     });
 
-    li.appendChild(editBtn);
-    li.appendChild(delBtn);
-    teachersListEl.appendChild(li);
+    teachersTbody.appendChild(tr);
   }
 }
 
-function applyTeacherFilter() {
-  const filterEl = document.getElementById("teacherFilter");
-  const f = filterEl ? filterEl.value : "all";
-
-  const { classroomsByTeacher } = buildIndexes();
-
-  let list = [...cachedTeachers];
-  if (f === "assigned") list = list.filter((t) => (classroomsByTeacher.get(t.id) || 0) > 0);
-  if (f === "unassigned") list = list.filter((t) => (classroomsByTeacher.get(t.id) || 0) === 0);
-
-  renderTeachers(list);
-}
 
 async function loadTeachers() {
   teacherMsgEl.innerText = "";
@@ -397,6 +397,49 @@ async function addTeacher(e) {
     teacherMsgEl.innerText = err.message || "Network error adding teacher";
   }
 }
+async function approveTeacher(e) {
+  e.preventDefault();
+  if (approveTeacherMsgEl) approveTeacherMsgEl.innerText = "";
+
+  const userId = Number(document.getElementById("approveUserId").value);
+  const name = document.getElementById("approveTeacherName").value.trim();
+  const email = document.getElementById("approveTeacherEmail").value.trim();
+
+  if (!userId) {
+    if (approveTeacherMsgEl) approveTeacherMsgEl.innerText = "Enter a valid User ID.";
+    return;
+  }
+
+  const payload = {};
+  if (name) payload.name = name;
+  if (email) payload.email = email;
+
+  try {
+    const teacher = await requestJson(`/admin/approve-teacher/${userId}`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+
+   if (approveTeacherMsgEl) {
+  approveTeacherMsgEl.innerText =
+    `Approved ✅ Teacher #${teacher.id} linked to user_id=${teacher.user_id}`;
+
+  setTimeout(() => {
+    approveTeacherMsgEl.innerText = "";
+  }, 1500);
+}
+
+
+    // refresh teachers list so you can see user_id populated
+    await loadTeachers();
+
+    e.target.reset();
+  } catch (err) {
+    if (approveTeacherMsgEl) approveTeacherMsgEl.innerText = err.message || "Approval failed";
+  }
+}
+
 
 async function searchTeacherById() {
   const msg = document.getElementById("teacherSearchMsg");
@@ -419,10 +462,11 @@ async function searchTeacherById() {
 /* ---------------- CLASSROOMS (ADMIN) ---------------- */
 
 function renderClassrooms(classrooms) {
-  classroomsListEl.innerHTML = "";
+  if (!classroomsTbody) return;
+  classroomsTbody.innerHTML = "";
 
   if (!classrooms || classrooms.length === 0) {
-    classroomsListEl.innerHTML = "<li>No classrooms yet.</li>";
+    classroomsTbody.innerHTML = `<tr><td colspan="8">No classrooms yet.</td></tr>`;
     return;
   }
 
@@ -433,14 +477,22 @@ function renderClassrooms(classrooms) {
     const status =
       count >= c.capacity ? "FULL" : count >= 0.8 * c.capacity ? "ALMOST FULL" : "AVAILABLE";
 
-    const li = document.createElement("li");
-    li.innerText = `#${c.id} ${c.name} grade=${c.grade} capacity=${c.capacity} teacher_id=${c.teacher_id} students=${count} → ${status}`;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>#${esc(c.id)}</td>
+      <td>${esc(c.name)}</td>
+      <td>${esc(c.grade)}</td>
+      <td>${esc(c.capacity)}</td>
+      <td>${esc(c.teacher_id)}</td>
+      <td>${count}</td>
+      <td>${status}</td>
+      <td>
+        <button class="editBtn">Edit</button>
+        <button class="delBtn">Delete</button>
+      </td>
+    `;
 
-    const editBtn = document.createElement("button");
-    editBtn.innerText = "Edit";
-    editBtn.style.marginLeft = "10px";
-
-    editBtn.addEventListener("click", () => {
+    tr.querySelector(".editBtn").addEventListener("click", () => {
       showEditPanel(
         `Edit classroom #${c.id}`,
         `
@@ -458,7 +510,7 @@ function renderClassrooms(classrooms) {
         `,
         async () => {
           const payload = {
-            name: document.getElementById("editClassroomName").value,
+            name: document.getElementById("editClassroomName").value.trim(),
             grade: Number(document.getElementById("editClassroomGrade").value),
             capacity: Number(document.getElementById("editClassroomCapacity").value),
             teacher_id: Number(document.getElementById("editClassroomTeacherId").value),
@@ -476,30 +528,28 @@ function renderClassrooms(classrooms) {
       );
     });
 
-    const delBtn = document.createElement("button");
-    delBtn.innerText = "Delete";
-    delBtn.style.marginLeft = "10px";
-
-    delBtn.addEventListener("click", async () => {
+    tr.querySelector(".delBtn").addEventListener("click", async () => {
       classroomMsgEl.innerText = "";
+      if (!confirm(`Delete classroom #${c.id}?`)) return;
+
       try {
         await requestJson(`/classrooms/${c.id}`, {
           method: "DELETE",
           headers: authHeaders(),
         });
 
+        cachedClassrooms = cachedClassrooms.filter((x) => x.id !== c.id);
+        applyClassroomFilter();
         classroomMsgEl.innerText = `Deleted classroom ${c.id}`;
-        await loadClassrooms();
       } catch (err) {
         classroomMsgEl.innerText = err.message || "Network error deleting classroom";
       }
     });
 
-    li.appendChild(editBtn);
-    li.appendChild(delBtn);
-    classroomsListEl.appendChild(li);
+    classroomsTbody.appendChild(tr);
   }
 }
+
 
 function applyClassroomFilter() {
   const filterEl = document.getElementById("classroomFilter");
@@ -580,19 +630,19 @@ async function searchClassroomById() {
 /* ---------------- TEACHER VIEW (NON-ADMIN) ---------------- */
 
 const teacherView = document.getElementById("teacherView");
-const teacherClassroomsEl = document.getElementById("teacherClassrooms");
+const teacherClassroomsTbody = document.getElementById("teacherClassroomsTbody");
 const teacherStudentsSection = document.getElementById("teacherStudentsSection");
-const teacherStudentsEl = document.getElementById("teacherStudents");
+const teacherStudentsTbody = document.getElementById("teacherStudentsTbody");
 const teacherViewMsgEl = document.getElementById("teacherViewMsg");
 const teacherAddStudentForm = document.getElementById("teacherAddStudentForm");
 
 let currentTeacherClassroomId = null;
 
 async function loadTeacherClassrooms() {
-  if (!teacherClassroomsEl) return;
+  if (!teacherClassroomsTbody) return;
 
-  teacherClassroomsEl.innerHTML = "";
-  if (teacherStudentsEl) teacherStudentsEl.innerHTML = "";
+  teacherClassroomsTbody.innerHTML = "";
+  if (teacherStudentsTbody) teacherStudentsTbody.innerHTML = "";
   if (teacherStudentsSection) teacherStudentsSection.style.display = "none";
   if (teacherViewMsgEl) teacherViewMsgEl.innerText = "";
 
@@ -601,31 +651,34 @@ async function loadTeacherClassrooms() {
       headers: authHeaders(),
     });
 
-    if (classrooms.length === 0) {
-      teacherClassroomsEl.innerHTML = "<li>No classrooms assigned.</li>";
+    if (!classrooms || classrooms.length === 0) {
+      teacherClassroomsTbody.innerHTML =
+        `<tr><td colspan="4">No classrooms assigned.</td></tr>`;
       return;
     }
 
     for (const c of classrooms) {
-      const li = document.createElement("li");
-      li.innerText = `${c.name} (Grade ${c.grade}, Capacity ${c.capacity})`;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${esc(c.name)}</td>
+        <td>${esc(c.grade)}</td>
+        <td>${esc(c.capacity)}</td>
+        <td><button class="btn btnSmall">View students</button></td>
+      `;
 
-      const btn = document.createElement("button");
-      btn.innerText = "View students";
-      btn.style.marginLeft = "10px";
-      btn.addEventListener("click", () => loadTeacherStudents(c.id));
-
-      li.appendChild(btn);
-      teacherClassroomsEl.appendChild(li);
+      tr.querySelector("button").addEventListener("click", () => loadTeacherStudents(c.id));
+      teacherClassroomsTbody.appendChild(tr);
     }
   } catch (err) {
-    teacherClassroomsEl.innerHTML = `<li>${err.message}</li>`;
+    teacherClassroomsTbody.innerHTML =
+      `<tr><td colspan="4">${esc(err.message || "Failed to load classrooms")}</td></tr>`;
   }
 }
 
+
 async function loadTeacherStudents(classroomId) {
   currentTeacherClassroomId = classroomId;
-  if (teacherStudentsEl) teacherStudentsEl.innerHTML = "";
+  if (teacherStudentsTbody) teacherStudentsTbody.innerHTML = "";
   if (teacherStudentsSection) teacherStudentsSection.style.display = "block";
   if (teacherViewMsgEl) teacherViewMsgEl.innerText = "";
 
@@ -635,38 +688,43 @@ async function loadTeacherStudents(classroomId) {
     });
 
     if (!students || students.length === 0) {
-      teacherStudentsEl.innerHTML = "<li>No students yet.</li>";
+      teacherStudentsTbody.innerHTML = `<tr><td colspan="4">No students yet.</td></tr>`;
       return;
     }
 
     for (const s of students) {
-      const li = document.createElement("li");
-      li.innerText = `${s.name} (age ${s.age}) enrolled=${s.is_enrolled}`;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${esc(s.name)}</td>
+        <td>${esc(s.age)}</td>
+        <td>${s.is_enrolled ? "✅" : "❌"}</td>
+        <td><button class="btn btnSmall btnDanger">Delete</button></td>
+      `;
 
-      const delBtn = document.createElement("button");
-      delBtn.innerText = "Delete";
-      delBtn.style.marginLeft = "10px";
-
-      delBtn.addEventListener("click", async () => {
+      tr.querySelector("button").addEventListener("click", async () => {
+        if (!confirm(`Delete student "${s.name}"?`)) return;
         if (teacherViewMsgEl) teacherViewMsgEl.innerText = "";
+
         try {
           await requestJson(`/my/students/${s.id}`, {
             method: "DELETE",
             headers: authHeaders(),
           });
+
           await loadTeacherStudents(currentTeacherClassroomId);
         } catch (err) {
           if (teacherViewMsgEl) teacherViewMsgEl.innerText = err.message;
         }
       });
 
-      li.appendChild(delBtn);
-      teacherStudentsEl.appendChild(li);
+      teacherStudentsTbody.appendChild(tr);
     }
   } catch (err) {
-    teacherStudentsEl.innerHTML = `<li>${err.message}</li>`;
+    teacherStudentsTbody.innerHTML =
+      `<tr><td colspan="4">${esc(err.message || "Failed to load students")}</td></tr>`;
   }
 }
+
 
 if (teacherAddStudentForm) {
   teacherAddStudentForm.addEventListener("submit", async (e) => {
@@ -699,6 +757,19 @@ if (teacherAddStudentForm) {
     }
   });
 }
+function applyTeacherFilter() {
+  const filterEl = document.getElementById("teacherFilter");
+  const f = filterEl ? filterEl.value : "all";
+
+  const { classroomsByTeacher } = buildIndexes();
+
+  let list = [...cachedTeachers];
+  if (f === "assigned") list = list.filter((t) => (classroomsByTeacher.get(t.id) || 0) > 0);
+  if (f === "unassigned") list = list.filter((t) => (classroomsByTeacher.get(t.id) || 0) === 0);
+
+  renderTeachers(list);
+}
+
 
 /* ---------------- AUTH CHECK ---------------- */
 
@@ -729,9 +800,10 @@ async function checkLogin() {
       await loadTeachers();
       await loadClassrooms();
 
-      applyStudentFilter();
-      applyTeacherFilter();
-      applyClassroomFilter();
+      if (typeof applyStudentFilter === "function") applyStudentFilter();
+      if (typeof applyTeacherFilter === "function") applyTeacherFilter();
+      if (typeof applyClassroomFilter === "function") applyClassroomFilter();
+
     } else {
       titleEl.innerText = "Teacher dashboard";
 
@@ -762,6 +834,8 @@ document.getElementById("searchStudentBtn").addEventListener("click", searchStud
 document.getElementById("refreshTeachersBtn").addEventListener("click", loadTeachers);
 document.getElementById("addTeacherForm").addEventListener("submit", addTeacher);
 document.getElementById("searchTeacherBtn").addEventListener("click", searchTeacherById);
+if (approveTeacherForm) approveTeacherForm.addEventListener("submit", approveTeacher);
+
 
 document.getElementById("refreshClassroomsBtn").addEventListener("click", loadClassrooms);
 document.getElementById("addClassroomForm").addEventListener("submit", addClassroom);

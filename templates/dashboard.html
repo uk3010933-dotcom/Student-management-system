@@ -5,22 +5,55 @@
     <link rel="stylesheet" href="/static/style.css">
   </head>
 
-  <body>
-    <h1 id="title">Dashboard</h1>
+  <body class="appPage">
 
-    <p id="status">Checking login...</p>
+  <div class="appShell">
+  <header class="topbar">
+    <div class="topbarLeft">
+      <div class="brandMark">SM</div>
+      <div>
+        <div id="title" class="topTitle">Dashboard</div>
+        <div id="status" class="topSub">Checking login...</div>
+      </div>
+    </div>
 
-    <button id="logoutBtn">Logout</button>
+    <button id="logoutBtn" class="btn">Logout</button>
+  </header>
+
 
    <!-- Teacher view -->
-<div id="teacherView" style="display:none; margin-top:20px;">
-  <h2>My Classrooms</h2>
+<div id="teacherView" class="card" style="display:none;">
 
-  <ul id="teacherClassrooms"></ul>
+  <h2>My Classrooms</h2>
+  <p id="teacherViewMsg"></p>
+
+  <table class="dataTable">
+  <thead>
+    <tr>
+      <th>Classroom</th>
+      <th>Grade</th>
+      <th>Capacity</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody id="teacherClassroomsTbody"></tbody>
+</table>
+
 
   <div id="teacherStudentsSection" style="display:none; margin-top:20px;">
     <h3>Students</h3>
-    <ul id="teacherStudents"></ul>
+    <table class="dataTable">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Age</th>
+      <th>Enrolled</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody id="teacherStudentsTbody"></tbody>
+</table>
+
 
     <h4>Add Student</h4>
     <form id="teacherAddStudentForm">
@@ -45,7 +78,8 @@
 
 
     <!-- Admin view -->
-    <div id="adminView" style="display:none; margin-top:20px;">
+   <div id="adminView" class="card" style="display:none;">
+
       <h2>Admin dashboard</h2>
 
       <div style="margin: 12px 0;">
@@ -84,7 +118,20 @@
         <option value="not_enrolled">Not enrolled</option>
         </select>
 
-        <ul id="studentsList"></ul>
+       <table class="dataTable" id="studentsTable">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Age</th>
+      <th>Enrolled</th>
+      <th>Classroom</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="studentsTbody"></tbody>
+</table>
+
 
         <h3>Add student</h3>
         <form id="addStudentForm">
@@ -112,6 +159,23 @@
       <section id="teachersPanel" class="panel" style="display:none;">
         <h2>Teachers</h2>
         <button id="refreshTeachersBtn">Refresh</button>
+        <!-- APPROVE TEACHER (ADMIN) -->
+<h3>Approve Teacher (Link User → Teacher)</h3>
+<form id="approveTeacherForm">
+  <label>User ID</label><br>
+  <input type="number" id="approveUserId" required><br><br>
+
+  <label>Teacher name (optional)</label><br>
+  <input type="text" id="approveTeacherName" placeholder="Leave blank to auto"><br><br>
+
+  <label>Teacher email (optional)</label><br>
+  <input type="email" id="approveTeacherEmail" placeholder="Leave blank to use user's email"><br><br>
+
+  <button type="submit">Approve Teacher</button>
+</form>
+<p id="approveTeacherMsg"></p>
+<hr>
+
         <div style="margin: 10px 0;">
         <input type="number" id="teacherSearchId" placeholder="Teacher ID">
         <button id="searchTeacherBtn">Search</button>
@@ -123,7 +187,18 @@
         <option value="unassigned">No classroom yet</option>
         </select>
 
-        <ul id="teachersList"></ul>
+        <table class="dataTable" id="teachersTable">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Assigned</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="teachersTbody"></tbody>
+</table>
 
         <h3>Add teacher</h3>
         <form id="addTeacherForm">
@@ -154,7 +229,22 @@
     <option value="available">Available</option>
     </select>
 
-        <ul id="classroomsList"></ul>
+       <table class="dataTable" id="classroomsTable">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Grade</th>
+      <th>Capacity</th>
+      <th>Teacher</th>
+      <th>Students</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="classroomsTbody"></tbody>
+</table>
+
 
         <h3>Add classroom</h3>
         <form id="addClassroomForm">
@@ -177,6 +267,8 @@
     </div>
     
 
-    <script src="/static/dashboard.js"></script>
+    </div> <!-- end appShell -->
+<script src="/static/dashboard.js"></script>
+
   </body>
 </html>

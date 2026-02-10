@@ -1,16 +1,26 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
-
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
-
 from app.database import create_db_and_tables, engine
-from app.models import Student, Teachers, Classroom
-
+from app.models import Student, Teachers, Classroom, User
 from app.auth import router as auth_router
 from app.auth import get_current_user
+from pydantic import BaseModel
+from typing import Optional
+class TeacherCreate(BaseModel):
+    name: str
+    email: Optional[str] = None
+
+class TeacherUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+
+class ApproveTeacherBody(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
 
 
 app = FastAPI()
@@ -163,32 +173,66 @@ def get_teachers(
     session: Session = Depends(get_session),
     _admin=Depends(admin_required),
 ):
-    teachers = session.exec(select(Teachers)).all()
-    return teachers
+    return session.exec(select(Teachers)).all()
 
 
 @app.post("/teachers")
 def add_teacher(
-    teacher: Teachers,
+    payload: TeacherCreate,
     session: Session = Depends(get_session),
     _admin=Depends(admin_required),
 ):
-    teacher.id = None
-
-    if teacher.email is not None:
+    # NOTE: This creates an "unlinked" teacher profile (no user_id).
+    # It's still useful if you want to pre-create teacher records before they register.
+    if payload.email is not None:
         existing = session.exec(
-            select(Teachers).where(Teachers.email == teacher.email)
+            select(Teachers).where(Teachers.email == payload.email)
         ).first()
         if existing:
             raise HTTPException(status_code=409, detail="Email already in use")
+
+    teacher = Teachers(
+        name=payload.name,
+        email=payload.email,
+        user_id=None,
+    )
 
     session.add(teacher)
     try:
         session.commit()
     except IntegrityError:
         session.rollback()
-        raise HTTPException(status_code=400, detail="Insert failed (duplicate id or email).")
+        raise HTTPException(status_code=400, detail="Insert failed (duplicate email/user link).")
 
+    session.refresh(teacher)
+    return teacher
+
+
+@app.put("/teachers/{teacher_id}")
+def update_teacher(
+    teacher_id: int,
+    payload: TeacherUpdate,
+    session: Session = Depends(get_session),
+    _admin=Depends(admin_required),
+):
+    teacher = session.get(Teachers, teacher_id)
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+
+    if payload.email is not None:
+        existing = session.exec(
+            select(Teachers).where(Teachers.email == payload.email)
+        ).first()
+        if existing and existing.id != teacher_id:
+            raise HTTPException(status_code=409, detail="Email already in use")
+
+    if payload.name is not None:
+        teacher.name = payload.name
+    if payload.email is not None:
+        teacher.email = payload.email
+
+    session.add(teacher)
+    session.commit()
     session.refresh(teacher)
     return teacher
 
@@ -200,39 +244,60 @@ def delete_teacher(
     _admin=Depends(admin_required),
 ):
     teacher = session.get(Teachers, teacher_id)
-
     if not teacher:
         raise HTTPException(status_code=404, detail="Teacher not found")
 
     session.delete(teacher)
     session.commit()
-
     return {"deleted": True, "teacher_id": teacher_id}
 
 
-@app.put("/teachers/{teacher_id}")
-def update_teacher(
-    teacher_id: int,
-    updated_teacher: Teachers,
+# ---------------- DESIGN A: APPROVE A REGISTERED USER AS A TEACHER ----------------
+# This is the endpoint that actually fixes "Not a teacher account".
+# It creates Teachers.user_id = User.id so /my/* works.
+
+@app.post("/admin/approve-teacher/{user_id}")
+def approve_teacher(
+    user_id: int,
+    body: ApproveTeacherBody = ApproveTeacherBody(),
     session: Session = Depends(get_session),
     _admin=Depends(admin_required),
 ):
-    teacher = session.get(Teachers, teacher_id)
-    if not teacher:
-        raise HTTPException(status_code=404, detail="Teacher not found")
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    if updated_teacher.email is not None:
-        existing = session.exec(
-            select(Teachers).where(Teachers.email == updated_teacher.email)
+    # already linked? return it
+    existing_teacher = session.exec(
+        select(Teachers).where(Teachers.user_id == user.id)
+    ).first()
+    if existing_teacher:
+        return existing_teacher
+
+    # If you want to enforce "teacher email must match user email", do it here
+    email_to_use = body.email if body.email else user.email
+
+    # optional: prevent two teacher profiles having same email
+    if email_to_use is not None:
+        email_taken = session.exec(
+            select(Teachers).where(Teachers.email == email_to_use)
         ).first()
-        if existing and existing.id != teacher_id:
-            raise HTTPException(status_code=409, detail="Email already in use")
+        if email_taken:
+            raise HTTPException(status_code=409, detail="Email already in use by another teacher")
 
-    teacher.name = updated_teacher.name
-    teacher.email = updated_teacher.email
+    teacher = Teachers(
+        name=body.name if body.name else user.email.split("@")[0],
+        email=email_to_use,
+        user_id=user.id,
+    )
 
     session.add(teacher)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=400, detail="Approval failed (duplicate user link or email).")
+
     session.refresh(teacher)
     return teacher
 
